@@ -26,12 +26,20 @@
 ### Installation
 
 ```bash
-# 1. Clone repository
+# 1. Clone the repository
 git clone https://github.com/samsatwork7/nmapfusion.git
 cd nmapfusion
 
-# 2. Install dependencies
+# 2. Create and activate a Python virtual environment
+python3 -m venv env
+source env/bin/activate     # For Linux/Kali/macOS
+
+# (Windows PowerShell equivalent)
+# .\env\Scripts\activate
+
+# 3. Install dependencies inside the virtual environment
 pip install -r requirements.txt
 
-# 3. Run your first analysis
-python nmapfusion.py -i ./nmap_scans/ -a --html --excel
+# 4. Run your first NmapFusion analysis
+python main.py -i ./nmap_scans/ --all --html --excel
+
