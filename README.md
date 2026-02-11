@@ -27,7 +27,7 @@
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/nmapfusion.git
+git clone https://github.com/samsatwork7/nmapfusion.git
 cd nmapfusion
 
 # 2. Install dependencies
