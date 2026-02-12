@@ -191,36 +191,62 @@
             color: white;
         }
         
-        /* Collapsible Cards */
+        /* Collapsible Cards - FIXED VERSION */
         .host-card {
             background: #0f1a2b;
             border-radius: 8px;
             margin-bottom: 15px;
             border: 1px solid #2a3a4a;
+            width: 100%;
         }
         
         .host-header {
-            padding: 15px;
+            padding: 15px 20px;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: linear-gradient(90deg, #1a2a3a 0%, #0f1a2b 100%);
-            border-radius: 8px 8px 0 0;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+            user-select: none;
         }
         
         .host-header:hover {
-            background: #1a2a3a;
+            background: #1e2e3e;
+        }
+        
+        .host-header .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .host-header .header-right {
+            color: #00bcd4;
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+        
+        .host-header.active .header-right {
+            transform: rotate(180deg);
         }
         
         .host-content {
-            padding: 20px;
-            border-top: 1px solid #2a3a4a;
-            display: none;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.2s ease;
+            background: #0a121c;
+            border-radius: 0 0 8px 8px;
         }
         
         .host-content.active {
-            display: block;
+            padding: 20px;
+            max-height: 2000px; /* Large enough for content */
+            overflow-y: auto;
+            border-top: 1px solid #2a3a4a;
         }
         
         /* NSE Findings */
@@ -248,6 +274,12 @@
             
             .header h1 {
                 font-size: 1.8em;
+            }
+            
+            .host-header .header-left {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
             }
         }
         
@@ -320,6 +352,15 @@
             color: #e6e9f0;
             font-weight: bold;
         }
+
+        /* Arrow animation */
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+        
+        .rotate {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -328,7 +369,7 @@
         <div class="header">
             <h1>🔍 NmapFusion - Security Assessment Report</h1>
             <div class="timestamp">Generated: {{ timestamp }}</div>
-            <div class="report-id">Report ID: NMAP-{{ timestamp|replace(' ', '-')|replace(':', '') }}</div>
+            <div class="report-id">Report ID: NMF-{{ timestamp|replace(' ', '-')|replace(':', '') }}</div>
         </div>
         
         <!-- Nmap Command Panel -->
@@ -406,76 +447,78 @@
         </div>
         {% endif %}
         
-        <!-- TABLE 2: HOST DETAILED ANALYSIS -->
+        <!-- TABLE 2: HOST DETAILED ANALYSIS - FIXED DROPDOWNS -->
         {% if 'table2' in selected_tables %}
         <div class="table-container">
             <h2><span>TABLE 2</span> HOST DETAILED ANALYSIS</h2>
-            {% for ip, data in table2.items() %}
-            <div class="host-card">
-                <div class="host-header" onclick="this.nextElementSibling.classList.toggle('active')">
-                    <div>
-                        <strong style="font-size: 1.1em;">{{ ip }}</strong>
-                        {% if data.hostname %}
-                        <span style="color: #8899aa; margin-left: 10px;">({{ data.hostname }})</span>
-                        {% endif %}
-                        <span style="margin-left: 15px;">OS: {{ data.os[:20] }}</span>
-                        <span style="margin-left: 15px;" class="risk-{{ data.risk_level }}">
-                            {{ data.risk_level.upper() }}
-                        </span>
+            <div id="hosts-container">
+                {% for ip, data in table2.items() %}
+                <div class="host-card">
+                    <div class="host-header" onclick="toggleHost(this)">
+                        <div class="header-left">
+                            <strong style="font-size: 1.1em; color: #00bcd4;">{{ ip }}</strong>
+                            {% if data.hostname %}
+                            <span style="color: #8899aa;">({{ data.hostname }})</span>
+                            {% endif %}
+                            <span style="color: #8899aa;">OS: {{ data.os[:20] }}</span>
+                            <span class="risk-{{ data.risk_level }}">
+                                {{ data.risk_level.upper() }}
+                            </span>
+                        </div>
+                        <div class="header-right arrow">▼</div>
                     </div>
-                    <div style="color: #00bcd4;">▼</div>
+                    <div class="host-content">
+                        <h4 style="color: #00bcd4; margin-bottom: 15px;">Open Ports ({{ data.ports|length }})</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Port</th>
+                                    <th>Protocol</th>
+                                    <th>Service</th>
+                                    <th>Version</th>
+                                    <th>Risk</th>
+                                    <th>NSE Findings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for port in data.ports %}
+                                <tr>
+                                    <td><strong>{{ port.port }}</strong></td>
+                                    <td>{{ port.protocol }}</td>
+                                    <td>{{ port.service }}</td>
+                                    <td>{{ port.version[:40] if port.version != 'unknown' else '—' }}</td>
+                                    <td><span class="risk-{{ port.risk }}">{{ port.risk.upper() }}</span></td>
+                                    <td>
+                                        {% if port.nse_summary %}
+                                            {% for summary in port.nse_summary[:2] %}
+                                                {{ summary[:60] }}{% if not loop.last %}; {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        {% if data.cves %}
+                        <h4 style="color: #ff4444; margin: 20px 0 10px 0;">Vulnerabilities Detected</h4>
+                        {% for cve in data.cves[:5] %}
+                        <div class="cve-item">{{ cve.id }} {% if cve.port %}(Port {{ cve.port }}){% endif %}</div>
+                        {% endfor %}
+                        {% endif %}
+                        
+                        {% if data.weak_ciphers %}
+                        <h4 style="color: #ffbb33; margin: 20px 0 10px 0;">Weak Cryptographic Configurations</h4>
+                        {% for cipher in data.weak_ciphers[:3] %}
+                        <div class="nse-finding">{{ cipher.cipher }} {% if cipher.port %}(Port {{ cipher.port }}){% endif %}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="host-content">
-                    <h4 style="color: #00bcd4; margin-bottom: 15px;">Open Ports ({{ data.ports|length }})</h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Port</th>
-                                <th>Protocol</th>
-                                <th>Service</th>
-                                <th>Version</th>
-                                <th>Risk</th>
-                                <th>NSE Findings</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for port in data.ports %}
-                            <tr>
-                                <td><strong>{{ port.port }}</strong></td>
-                                <td>{{ port.protocol }}</td>
-                                <td>{{ port.service }}</td>
-                                <td>{{ port.version[:40] if port.version != 'unknown' else '—' }}</td>
-                                <td><span class="risk-{{ port.risk }}">{{ port.risk.upper() }}</span></td>
-                                <td>
-                                    {% if port.nse_summary %}
-                                        {% for summary in port.nse_summary[:2] %}
-                                            {{ summary[:60] }}{% if not loop.last %}; {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    
-                    {% if data.cves %}
-                    <h4 style="color: #ff4444; margin: 20px 0 10px 0;">Vulnerabilities Detected</h4>
-                    {% for cve in data.cves[:5] %}
-                    <div class="cve-item">{{ cve.id }} {% if cve.port %}(Port {{ cve.port }}){% endif %}</div>
-                    {% endfor %}
-                    {% endif %}
-                    
-                    {% if data.weak_ciphers %}
-                    <h4 style="color: #ffbb33; margin: 20px 0 10px 0;">Weak Cryptographic Configurations</h4>
-                    {% for cipher in data.weak_ciphers[:3] %}
-                    <div class="nse-finding">{{ cipher.cipher }} {% if cipher.port %}(Port {{ cipher.port }}){% endif %}</div>
-                    {% endfor %}
-                    {% endif %}
-                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
         {% endif %}
         
@@ -600,23 +643,56 @@
         
         <!-- Footer -->
         <div class="footer">
-            <p>Generated by NmapFusion — Enterprise Network Assessment Tool</p>
+            <p>Generated by NmapFusion v1.0 — Enterprise Network Fusion Tool</p>
             <p style="margin-top: 10px; font-size: 0.8em;">This report is confidential and intended for authorized security assessment purposes only.</p>
         </div>
     </div>
     
+    <!-- FIXED JAVASCRIPT - DROPDOWNS NOW WORK -->
     <script>
-        // Toggle host details
-        document.querySelectorAll('.host-header').forEach(header => {
-            header.addEventListener('click', function() {
-                this.nextElementSibling.classList.toggle('active');
-            });
-        });
-        
-        // Auto-expand first host
-        if (document.querySelector('.host-content')) {
-            document.querySelector('.host-content').classList.add('active');
+        // Function to toggle host details
+        function toggleHost(header) {
+            // Toggle active class on header
+            header.classList.toggle('active');
+            
+            // Get the content div (next sibling)
+            const content = header.nextElementSibling;
+            
+            // Toggle active class on content
+            content.classList.toggle('active');
+            
+            // Toggle arrow rotation
+            const arrow = header.querySelector('.arrow');
+            if (arrow) {
+                arrow.classList.toggle('rotate');
+            }
         }
+        
+        // Initialize all dropdowns after page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-expand first host
+            const firstHost = document.querySelector('.host-header');
+            if (firstHost) {
+                setTimeout(function() {
+                    toggleHost(firstHost);
+                }, 100);
+            }
+            
+            // Add click event listeners to all host headers
+            const hostHeaders = document.querySelectorAll('.host-header');
+            hostHeaders.forEach(function(header) {
+                // Remove any existing onclick attribute to avoid double events
+                header.removeAttribute('onclick');
+                
+                // Add click event listener
+                header.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    toggleHost(this);
+                });
+            });
+            
+            console.log('NmapFusion: Dropdown initialized for ' + hostHeaders.length + ' hosts');
+        });
     </script>
 </body>
 </html>
