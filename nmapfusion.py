@@ -137,8 +137,8 @@ def main():
     
     print(f"[2/5] 🔀 Fusion complete: {fusion_summary['unique_ips']} unique IPs from {fusion_summary['files_processed']} files")
     
-    # Step 2: Enrich with risk scores and subnet info
-    print("[3/5] ⚠️  Enriching data with risk scores...")
+    # Step 2: Enrich with subnet info
+    print("[3/5] 🔍 Enriching data with subnet information...")
     enricher = Enricher(config)
     hosts = enricher.enrich_hosts(hosts)
     
@@ -191,15 +191,36 @@ def main():
     
     print("\n✅ NmapFusion analysis complete!")
 
+import signal
+
+def graceful_exit(message, code=0):
+    """Clean exit handler"""
+    print(f"\n{message}")
+    print("🔒 NmapFusion exited safely.")
+    sys.exit(code)
+
+
+def signal_handler(sig, frame):
+    """Handle Ctrl+C (SIGINT)"""
+    graceful_exit("⚠️  Execution interrupted by user (SIGINT).", 130)
+
+
 if __name__ == '__main__':
+    # Register Ctrl+C handler
+    signal.signal(signal.SIGINT, signal_handler)
+
     try:
         main()
+
     except KeyboardInterrupt:
-        print("\n⚠️  Interrupted by user")
-        sys.exit(1)
+        graceful_exit("⚠️  Execution interrupted by user.", 130)
+
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n❌ Unexpected Error: {e}")
+
         if '--debug' in sys.argv or '-d' in sys.argv:
             import traceback
             traceback.print_exc()
+
         sys.exit(1)
+

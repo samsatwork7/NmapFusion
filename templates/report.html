@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NmapFusion - Security Assessment Report</title>
+    <title>NmapFusion - Network Assessment Report</title>
     <style>
         * {
             margin: 0;
@@ -160,38 +160,7 @@
             background: #1f2e3b;
         }
         
-        /* Risk Badges */
-        .risk-critical, .risk-high, .risk-medium, .risk-low {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.85em;
-            text-align: center;
-            display: inline-block;
-            text-transform: uppercase;
-        }
-        
-        .risk-critical {
-            background: #ff4444;
-            color: white;
-        }
-        
-        .risk-high {
-            background: #ff8800;
-            color: white;
-        }
-        
-        .risk-medium {
-            background: #ffbb33;
-            color: black;
-        }
-        
-        .risk-low {
-            background: #00C851;
-            color: white;
-        }
-        
-        /* Collapsible Cards - FIXED VERSION */
+        /* Collapsible Cards */
         .host-card {
             background: #0f1a2b;
             border-radius: 8px;
@@ -244,7 +213,7 @@
         
         .host-content.active {
             padding: 20px;
-            max-height: 2000px; /* Large enough for content */
+            max-height: 2000px;
             overflow-y: auto;
             border-top: 1px solid #2a3a4a;
         }
@@ -301,7 +270,7 @@
             margin-top: 40px;
         }
         
-        /* Port Frequency Colors */
+        /* Port Frequency Colors - Just for visual reference */
         .port-high {
             color: #ff4444;
             font-weight: bold;
@@ -353,7 +322,6 @@
             font-weight: bold;
         }
 
-        /* Arrow animation */
         .arrow {
             transition: transform 0.3s ease;
         }
@@ -367,7 +335,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🔍 NmapFusion - Security Assessment Report</h1>
+            <h1>🔍 NmapFusion - Network Assessment Report</h1>
             <div class="timestamp">Generated: {{ timestamp }}</div>
             <div class="report-id">Report ID: NMF-{{ timestamp|replace(' ', '-')|replace(':', '') }}</div>
         </div>
@@ -426,7 +394,6 @@
                         <th>UDP</th>
                         <th>Services</th>
                         <th>Operating System</th>
-                        <th>Risk Level</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -439,7 +406,6 @@
                         <td>{{ row.udp_ports }}</td>
                         <td>{{ row.total_services }}</td>
                         <td>{{ row.os[:30] if row.os != 'unknown' else '—' }}</td>
-                        <td><span class="risk-{{ row.risk_level }}">{{ row.risk_level.upper() }}</span></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -447,7 +413,7 @@
         </div>
         {% endif %}
         
-        <!-- TABLE 2: HOST DETAILED ANALYSIS - FIXED DROPDOWNS -->
+        <!-- TABLE 2: HOST DETAILED ANALYSIS -->
         {% if 'table2' in selected_tables %}
         <div class="table-container">
             <h2><span>TABLE 2</span> HOST DETAILED ANALYSIS</h2>
@@ -461,9 +427,6 @@
                             <span style="color: #8899aa;">({{ data.hostname }})</span>
                             {% endif %}
                             <span style="color: #8899aa;">OS: {{ data.os[:20] }}</span>
-                            <span class="risk-{{ data.risk_level }}">
-                                {{ data.risk_level.upper() }}
-                            </span>
                         </div>
                         <div class="header-right arrow">▼</div>
                     </div>
@@ -476,7 +439,6 @@
                                     <th>Protocol</th>
                                     <th>Service</th>
                                     <th>Version</th>
-                                    <th>Risk</th>
                                     <th>NSE Findings</th>
                                 </tr>
                             </thead>
@@ -487,7 +449,6 @@
                                     <td>{{ port.protocol }}</td>
                                     <td>{{ port.service }}</td>
                                     <td>{{ port.version[:40] if port.version != 'unknown' else '—' }}</td>
-                                    <td><span class="risk-{{ port.risk }}">{{ port.risk.upper() }}</span></td>
                                     <td>
                                         {% if port.nse_summary %}
                                             {% for summary in port.nse_summary[:2] %}
@@ -577,7 +538,6 @@
                             <th>Hostname</th>
                             <th>Operating System</th>
                             <th>Service Version</th>
-                            <th>Risk Level</th>
                             <th>Business Function</th>
                         </tr>
                     </thead>
@@ -588,7 +548,6 @@
                             <td>{{ host.hostname if host.hostname else '—' }}</td>
                             <td>{{ host.os[:20] }}</td>
                             <td>{{ host.version[:40] if host.version != 'unknown' else '—' }}</td>
-                            <td><span class="risk-{{ host.risk }}">{{ host.risk.upper() }}</span></td>
                             <td>{{ host.business_function|replace('_', ' ')|title }}</td>
                         </tr>
                         {% endfor %}
@@ -602,9 +561,9 @@
         </div>
         {% endif %}
         
-        <!-- EXECUTIVE SUMMARY -->
+        <!-- NETWORK ASSESSMENT SUMMARY -->
         <div class="executive-summary">
-            <h2>📊 EXECUTIVE SUMMARY</h2>
+            <h2>📊 NETWORK ASSESSMENT SUMMARY</h2>
             <div class="summary-grid">
                 <div class="summary-item">
                     <span class="summary-label">Total Hosts Analyzed:</span>
@@ -622,46 +581,22 @@
                     <span class="summary-label">Weak Ciphers:</span>
                     <span class="summary-value">{{ stats.total_weak_ciphers }}</span>
                 </div>
-                <div class="summary-item">
-                    <span class="summary-label">Critical Risk Hosts:</span>
-                    <span class="summary-value" style="color: #ff4444;">{{ stats.risk_counts.critical }}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">High Risk Hosts:</span>
-                    <span class="summary-value" style="color: #ff8800;">{{ stats.risk_counts.high }}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Medium Risk Hosts:</span>
-                    <span class="summary-value" style="color: #ffbb33;">{{ stats.risk_counts.medium }}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Low Risk Hosts:</span>
-                    <span class="summary-value" style="color: #00C851;">{{ stats.risk_counts.low }}</span>
-                </div>
             </div>
         </div>
         
         <!-- Footer -->
         <div class="footer">
             <p>Generated by NmapFusion v1.0 — Enterprise Network Fusion Tool</p>
-            <p style="margin-top: 10px; font-size: 0.8em;">This report is confidential and intended for authorized security assessment purposes only.</p>
+            <p style="margin-top: 10px; font-size: 0.8em;">This report is confidential and intended for authorized assessment purposes only.</p>
         </div>
     </div>
     
-    <!-- FIXED JAVASCRIPT - DROPDOWNS NOW WORK -->
     <script>
         // Function to toggle host details
         function toggleHost(header) {
-            // Toggle active class on header
             header.classList.toggle('active');
-            
-            // Get the content div (next sibling)
             const content = header.nextElementSibling;
-            
-            // Toggle active class on content
             content.classList.toggle('active');
-            
-            // Toggle arrow rotation
             const arrow = header.querySelector('.arrow');
             if (arrow) {
                 arrow.classList.toggle('rotate');
@@ -678,20 +613,15 @@
                 }, 100);
             }
             
-            // Add click event listeners to all host headers
+            // Add click event listeners
             const hostHeaders = document.querySelectorAll('.host-header');
             hostHeaders.forEach(function(header) {
-                // Remove any existing onclick attribute to avoid double events
                 header.removeAttribute('onclick');
-                
-                // Add click event listener
                 header.addEventListener('click', function(e) {
                     e.preventDefault();
                     toggleHost(this);
                 });
             });
-            
-            console.log('NmapFusion: Dropdown initialized for ' + hostHeaders.length + ' hosts');
         });
     </script>
 </body>

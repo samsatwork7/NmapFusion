@@ -1,11 +1,11 @@
-"""Analyze fused host data and generate table structures"""
+"""Analyze fused host data and generate table structures - NO RISK"""
 
 from collections import defaultdict
 import ipaddress
 from utils.subnet_utils import SubnetSorter, sort_ports
 
 class Analyzer:
-    """Build data structures for all 4 table types"""
+    """Build data structures for all 4 table types - NO RISK"""
     
     def __init__(self):
         self.hosts = []
@@ -13,9 +13,9 @@ class Analyzer:
         
         # Table data structures
         self.table1_data = []  # Per-IP Overview
-        self.table2_data = {}  # Per-IP Detailed (IP -> list of ports)
+        self.table2_data = {}  # Per-IP Detailed
         self.table3_data = []  # Port Frequency
-        self.table4_data = {}  # Per-Port Detailed (port -> list of hosts)
+        self.table4_data = {}  # Per-Port Detailed
         
         # Mappings
         self.port_to_ips = defaultdict(list)
@@ -57,7 +57,7 @@ class Analyzer:
                 self.port_to_hosts[key].append(host)
     
     def _build_table1(self):
-        """Build Table 1: Per-IP Overview"""
+        """Build Table 1: Host Summary Overview - NO RISK"""
         self.table1_data = []
         
         for host in self.sorted_hosts:
@@ -72,13 +72,12 @@ class Analyzer:
                 'tcp_ports': len(tcp_ports),
                 'udp_ports': len(udp_ports),
                 'total_services': len(set([p['service'] for p in ports if p['service'] != 'unknown'])),
-                'os': host.get('os', 'unknown'),
-                'risk_level': host.get('risk_level', 'unknown')
+                'os': host.get('os', 'unknown')
             }
             self.table1_data.append(row)
     
     def _build_table2(self):
-        """Build Table 2: Per-IP Detailed"""
+        """Build Table 2: Host Detailed Analysis - NO RISK"""
         self.table2_data = {}
         
         for host in self.sorted_hosts:
@@ -92,8 +91,6 @@ class Analyzer:
                     'protocol': port['protocol'],
                     'service': port['service'],
                     'version': port['version'],
-                    'risk': port.get('risk', {}).get('level', 'unknown'),
-                    'risk_score': port.get('risk', {}).get('score', 0),
                     'nse_summary': self._get_port_nse_summary(port, host),
                     'business_function': port.get('business_function', 'other')
                 })
@@ -104,13 +101,11 @@ class Analyzer:
                 'os': host.get('os', 'unknown'),
                 'ports': port_details,
                 'cves': host.get('cves', []),
-                'weak_ciphers': host.get('weak_ciphers', []),
-                'risk_score': host.get('risk_score', 0),
-                'risk_level': host.get('risk_level', 'unknown')
+                'weak_ciphers': host.get('weak_ciphers', [])
             }
     
     def _build_table3(self):
-        """Build Table 3: Port Frequency"""
+        """Build Table 3: Port Frequency Distribution"""
         self.table3_data = []
         
         # Sort ports by frequency
@@ -127,14 +122,14 @@ class Analyzer:
                 'port': int(port),
                 'protocol': protocol,
                 'count': len(ips),
-                'ip_list': ips[:10],  # Show first 10 IPs
+                'ip_list': ips[:10],
                 'ip_count_total': len(ips),
                 'service': self._get_common_service(port_key)
             }
             self.table3_data.append(row)
     
     def _build_table4(self):
-        """Build Table 4: Per-Port Detailed"""
+        """Build Table 4: Service Exposure Matrix - NO RISK"""
         self.table4_data = {}
         
         for port_key, hosts in self.port_to_hosts.items():
@@ -142,7 +137,6 @@ class Analyzer:
             
             host_details = []
             for host in hosts:
-                # Find matching port info
                 for port_info in host.get('ports', []):
                     if f"{port_info['port']}/{port_info['protocol']}" == port_key:
                         host_details.append({
@@ -151,8 +145,6 @@ class Analyzer:
                             'os': host.get('os', 'unknown'),
                             'service': port_info['service'],
                             'version': port_info['version'],
-                            'risk': port_info.get('risk', {}).get('level', 'unknown'),
-                            'risk_score': port_info.get('risk', {}).get('score', 0),
                             'business_function': port_info.get('business_function', 'other')
                         })
                         break
@@ -181,7 +173,7 @@ class Analyzer:
             if f"port {port['port']}" in nse.get('output', '').lower():
                 summaries.append(f"{nse.get('id')}: {nse.get('output', '')[:50]}")
         
-        return summaries[:3]  # Top 3
+        return summaries[:3]
     
     def _get_common_service(self, port_key):
         """Get most common service for a port"""
