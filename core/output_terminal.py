@@ -1,15 +1,16 @@
-"""Terminal output rendering for NmapFusion - NO RISK LEVELS"""
+"""Terminal output rendering for NmapFusion - WITH PROPER SORTING"""
 
 from tabulate import tabulate
 from colorama import Fore, Back, Style, init
 import sys
+import ipaddress
 
 # Initialize colorama for Windows
 if sys.platform == 'win32':
     init(autoreset=True)
 
 class TerminalOutput:
-    """Render NmapFusion analysis results in terminal - NO RISK"""
+    """Render NmapFusion analysis results in terminal - WITH PROPER SORTING"""
     
     def __init__(self, verbose=False):
         self.verbose = verbose
@@ -35,7 +36,7 @@ class TerminalOutput:
             elif table == 'table4':
                 self.display_table4(analysis_results['table4'])
         
-        # Show summary - NO RISK
+        # Show summary
         self._display_summary(analysis_results)
     
     def _display_nmap_commands(self, commands):
@@ -67,7 +68,7 @@ class TerminalOutput:
         print(f"╚════════════════════════════════════════════════════════════════════════════╝{Style.RESET_ALL}\n")
     
     def display_table1(self, table1_data):
-        """Display Table 1: Host Summary Overview - NO RISK"""
+        """Display Table 1: Host Summary Overview"""
         print(f"{Fore.BLUE}{Style.BRIGHT}╔════════════════════════════════════════════════════════════════════════════╗")
         print(f"║                         TABLE 1: HOST SUMMARY OVERVIEW                    ║")
         print(f"╚════════════════════════════════════════════════════════════════════════════╝{Style.RESET_ALL}")
@@ -103,7 +104,7 @@ class TerminalOutput:
         print(f"{Fore.CYAN}  Total Hosts: {len(table1_data)} | Total Open Ports: {sum(r['total_ports'] for r in table1_data)}{Style.RESET_ALL}\n")
     
     def display_table2(self, table2_data):
-        """Display Table 2: Host Detailed Analysis - NO RISK"""
+        """Display Table 2: Host Detailed Analysis"""
         print(f"{Fore.GREEN}{Style.BRIGHT}╔════════════════════════════════════════════════════════════════════════════╗")
         print(f"║                       TABLE 2: HOST DETAILED ANALYSIS                     ║")
         print(f"╚════════════════════════════════════════════════════════════════════════════╝{Style.RESET_ALL}")
@@ -113,7 +114,7 @@ class TerminalOutput:
             return
         
         for ip, data in table2_data.items():
-            # Host header - NO RISK
+            # Host header
             print(f"\n{Fore.CYAN}{Style.BRIGHT}┌─ HOST: {ip} {Style.RESET_ALL}", end='')
             if data['hostname']:
                 print(f"{Fore.WHITE}({data['hostname']}){Style.RESET_ALL} ", end='')
@@ -124,7 +125,7 @@ class TerminalOutput:
                 print(f"  {Fore.YELLOW}⚠ No open ports detected{Style.RESET_ALL}\n")
                 continue
             
-            # Ports table - NO RISK COLUMN
+            # Ports table - ports already sorted by port number from analyzer
             headers = [
                 f"{Fore.CYAN}Port{Style.RESET_ALL}",
                 f"{Fore.CYAN}Proto{Style.RESET_ALL}",
@@ -161,7 +162,7 @@ class TerminalOutput:
         print("\n" + "═" * 80 + "\n")
     
     def display_table3(self, table3_data):
-        """Display Table 3: Port Frequency Distribution"""
+        """Display Table 3: Port Frequency Distribution - SORTED BY PORT NUMBER"""
         print(f"{Fore.YELLOW}{Style.BRIGHT}╔════════════════════════════════════════════════════════════════════════════╗")
         print(f"║                    TABLE 3: PORT FREQUENCY DISTRIBUTION                  ║")
         print(f"╚════════════════════════════════════════════════════════════════════════════╝{Style.RESET_ALL}")
@@ -175,11 +176,12 @@ class TerminalOutput:
             f"{Fore.CYAN}Protocol{Style.RESET_ALL}",
             f"{Fore.CYAN}Host Count{Style.RESET_ALL}",
             f"{Fore.CYAN}Service{Style.RESET_ALL}",
-            f"{Fore.CYAN}Sample Hosts{Style.RESET_ALL}"
+            f"{Fore.CYAN}Hosts (Sorted){Style.RESET_ALL}"
         ]
         
         table_data = []
-        for row in table3_data[:20]:
+        for row in table3_data:  # Already sorted by port number from analyzer
+            # IPs are already sorted ascending from analyzer
             ip_list = ', '.join(row['ip_list'][:5]) if row['ip_list'] else '—'
             if len(row['ip_list']) > 5:
                 ip_list += f" +{len(row['ip_list'])-5} more"
@@ -194,10 +196,10 @@ class TerminalOutput:
         
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
         print(f"{Fore.WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}  Total Unique Ports: {len(table3_data)} | Most Frequent: {table3_data[0]['port']}/{table3_data[0]['protocol']} ({table3_data[0]['count']} hosts){Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN}  Total Unique Ports: {len(table3_data)} | Port Range: {table3_data[0]['port']} - {table3_data[-1]['port']}{Style.RESET_ALL}\n")
     
     def display_table4(self, table4_data):
-        """Display Table 4: Service Exposure Matrix - NO RISK"""
+        """Display Table 4: Service Exposure Matrix - SORTED BY PORT NUMBER"""
         print(f"{Fore.MAGENTA}{Style.BRIGHT}╔════════════════════════════════════════════════════════════════════════════╗")
         print(f"║                     TABLE 4: SERVICE EXPOSURE MATRIX                     ║")
         print(f"╚════════════════════════════════════════════════════════════════════════════╝{Style.RESET_ALL}")
@@ -206,7 +208,10 @@ class TerminalOutput:
             print(f"{Fore.YELLOW}  ⚠ No service exposure data available{Style.RESET_ALL}\n")
             return
         
-        for port_key, data in list(table4_data.items())[:10]:
+        # Sort ports by port number for display
+        sorted_ports = sorted(table4_data.items(), key=lambda x: x[1]['port'])
+        
+        for port_key, data in sorted_ports[:20]:  # Limit to 20 ports for display
             print(f"\n{Fore.CYAN}{Style.BRIGHT}┌─ PORT: {data['port']}/{data['protocol']}{Style.RESET_ALL} ", end='')
             print(f"│ Exposure: {Fore.YELLOW}{data['host_count']} hosts{Style.RESET_ALL} ", end='')
             print(f"│ Service: {Fore.WHITE}{data['service']}{Style.RESET_ALL}")
@@ -216,7 +221,7 @@ class TerminalOutput:
                 print(f"  {Fore.YELLOW}⚠ No host data available{Style.RESET_ALL}\n")
                 continue
             
-            # Hosts table - NO RISK COLUMN
+            # Hosts table - hosts already sorted by IP from analyzer
             headers = [
                 f"{Fore.CYAN}IP Address{Style.RESET_ALL}",
                 f"{Fore.CYAN}Hostname{Style.RESET_ALL}",
@@ -226,7 +231,7 @@ class TerminalOutput:
             ]
             
             host_table = []
-            for host in data['hosts'][:15]:
+            for host in data['hosts'][:15]:  # Hosts already sorted by IP
                 host_table.append([
                     host['ip'],
                     host.get('hostname', '—')[:20],
@@ -240,13 +245,13 @@ class TerminalOutput:
             if len(data['hosts']) > 15:
                 print(f"  {Fore.WHITE}... and {len(data['hosts']) - 15} additional hosts{Style.RESET_ALL}")
         
-        if len(table4_data) > 10:
-            print(f"\n  {Fore.WHITE}... and {len(table4_data) - 10} additional ports{Style.RESET_ALL}")
+        if len(table4_data) > 20:
+            print(f"\n  {Fore.WHITE}... and {len(table4_data) - 20} additional ports{Style.RESET_ALL}")
         
         print("\n" + "═" * 80 + "\n")
     
     def _display_summary(self, analysis_results):
-        """Display executive summary - NO RISK"""
+        """Display executive summary"""
         hosts = analysis_results.get('sorted_hosts', [])
         total_ports = sum(len(h.get('ports', [])) for h in hosts)
         total_cves = sum(len(h.get('cves', [])) for h in hosts)

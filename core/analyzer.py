@@ -1,11 +1,11 @@
-"""Analyze fused host data and generate table structures - NO RISK"""
+"""Analyze fused host data and generate table structures - WITH PROPER SORTING"""
 
 from collections import defaultdict
 import ipaddress
 from utils.subnet_utils import SubnetSorter, sort_ports
 
 class Analyzer:
-    """Build data structures for all 4 table types - NO RISK"""
+    """Build data structures for all 4 table types - WITH PROPER SORTING"""
     
     def __init__(self):
         self.hosts = []
@@ -14,8 +14,8 @@ class Analyzer:
         # Table data structures
         self.table1_data = []  # Per-IP Overview
         self.table2_data = {}  # Per-IP Detailed
-        self.table3_data = []  # Port Frequency
-        self.table4_data = {}  # Per-Port Detailed
+        self.table3_data = []  # Port Frequency - SORTED BY PORT
+        self.table4_data = {}  # Per-Port Detailed - SORTED BY PORT
         
         # Mappings
         self.port_to_ips = defaultdict(list)
@@ -48,16 +48,30 @@ class Analyzer:
         }
     
     def _build_port_mappings(self):
-        """Build port -> IP and port -> host mappings"""
+        """Build port -> IP and port -> host mappings with IP sorting"""
         for host in self.hosts:
             ip = host['ip']
             for port in host.get('ports', []):
                 key = f"{port['port']}/{port['protocol']}"
                 self.port_to_ips[key].append(ip)
                 self.port_to_hosts[key].append(host)
+        
+        # Sort IPs in each port mapping
+        for key in self.port_to_ips:
+            self.port_to_ips[key] = sorted(
+                self.port_to_ips[key],
+                key=lambda x: ipaddress.ip_address(x)
+            )
+        
+        # Sort hosts in each port mapping by IP
+        for key in self.port_to_hosts:
+            self.port_to_hosts[key] = sorted(
+                self.port_to_hosts[key],
+                key=lambda x: ipaddress.ip_address(x['ip'])
+            )
     
     def _build_table1(self):
-        """Build Table 1: Host Summary Overview - NO RISK"""
+        """Build Table 1: Host Summary Overview"""
         self.table1_data = []
         
         for host in self.sorted_hosts:
@@ -77,7 +91,7 @@ class Analyzer:
             self.table1_data.append(row)
     
     def _build_table2(self):
-        """Build Table 2: Host Detailed Analysis - NO RISK"""
+        """Build Table 2: Host Detailed Analysis"""
         self.table2_data = {}
         
         for host in self.sorted_hosts:
@@ -105,38 +119,35 @@ class Analyzer:
             }
     
     def _build_table3(self):
-        """Build Table 3: Port Frequency Distribution"""
+        """Build Table 3: Port Frequency Distribution - SORTED BY PORT NUMBER"""
         self.table3_data = []
         
-        # Sort ports by frequency
-        sorted_ports = sorted(
-            self.port_to_ips.items(),
-            key=lambda x: len(x[1]),
-            reverse=True
-        )
-        
-        for port_key, ips in sorted_ports:
+        # Build port frequency data
+        for port_key, ips in self.port_to_ips.items():
             port, protocol = port_key.split('/')
             
             row = {
                 'port': int(port),
                 'protocol': protocol,
                 'count': len(ips),
-                'ip_list': ips[:10],
+                'ip_list': ips.copy(),  # Already sorted by IP
                 'ip_count_total': len(ips),
                 'service': self._get_common_service(port_key)
             }
             self.table3_data.append(row)
+        
+        # SORT TABLE 3 BY PORT NUMBER (ascending)
+        self.table3_data.sort(key=lambda x: x['port'])
     
     def _build_table4(self):
-        """Build Table 4: Service Exposure Matrix - NO RISK"""
+        """Build Table 4: Service Exposure Matrix - SORTED BY PORT NUMBER"""
         self.table4_data = {}
         
         for port_key, hosts in self.port_to_hosts.items():
             port, protocol = port_key.split('/')
             
             host_details = []
-            for host in hosts:
+            for host in hosts:  # Hosts already sorted by IP from _build_port_mappings
                 for port_info in host.get('ports', []):
                     if f"{port_info['port']}/{port_info['protocol']}" == port_key:
                         host_details.append({
@@ -149,16 +160,16 @@ class Analyzer:
                         })
                         break
             
-            # Sort hosts by IP
-            host_details.sort(key=lambda x: ipaddress.ip_address(x['ip']))
-            
             self.table4_data[port_key] = {
                 'port': int(port),
                 'protocol': protocol,
                 'host_count': len(host_details),
-                'hosts': host_details,
+                'hosts': host_details,  # Already sorted by IP
                 'service': self._get_common_service(port_key)
             }
+        
+        # No need to sort table4_data dict - we'll sort during display/rendering
+        # This preserves the structure but we'll sort keys when iterating
     
     def _get_port_nse_summary(self, port, host):
         """Get NSE summary for a specific port"""

@@ -136,6 +136,13 @@
             font-weight: bold;
         }
         
+        .sort-info {
+            color: #8899aa;
+            font-size: 0.9em;
+            margin-left: 15px;
+            font-style: italic;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
@@ -270,7 +277,7 @@
             margin-top: 40px;
         }
         
-        /* Port Frequency Colors - Just for visual reference */
+        /* Port Frequency Colors */
         .port-high {
             color: #ff4444;
             font-weight: bold;
@@ -483,10 +490,12 @@
         </div>
         {% endif %}
         
-        <!-- TABLE 3: PORT FREQUENCY DISTRIBUTION -->
+        <!-- TABLE 3: PORT FREQUENCY DISTRIBUTION - SORTED BY PORT -->
         {% if 'table3' in selected_tables %}
         <div class="table-container">
-            <h2><span>TABLE 3</span> PORT FREQUENCY DISTRIBUTION</h2>
+            <h2>
+                <span>TABLE 3</span> PORT FREQUENCY DISTRIBUTION
+                </h2>
             <table>
                 <thead>
                     <tr>
@@ -494,38 +503,47 @@
                         <th>Protocol</th>
                         <th>Host Count</th>
                         <th>Service</th>
-                        <th>Sample Hosts</th>
+                        <th>Hosts (IP Addresses - Sorted)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in table3[:20] %}
+                    {% for row in table3 %}
                     <tr>
-                        <td>
-                            {% if row.count >= 10 %}
-                                <span class="port-high">{{ row.port }}</span>
-                            {% elif row.count >= 5 %}
-                                <span class="port-medium">{{ row.port }}</span>
-                            {% else %}
-                                <span class="port-low">{{ row.port }}</span>
-                            {% endif %}
-                        </td>
+                        <td><strong>{{ row.port }}</strong></td>
                         <td>{{ row.protocol }}</td>
                         <td><strong>{{ row.count }}</strong></td>
                         <td>{{ row.service }}</td>
-                        <td>{{ row.ip_list[:5]|join(', ') }}{% if row.ip_list|length > 5 %} +{{ row.ip_list|length - 5 }} more{% endif %}</td>
+                        <td>
+                            {% for ip in row.ip_list[:5] %}
+                                {{ ip }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if row.ip_list|length > 5 %}
+                                +{{ row.ip_list|length - 5 }} more
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <p style="margin-top: 15px; color: #8899aa;">Total unique ports: {{ table3|length }} | Most frequent: {{ table3[0].port }}/{{ table3[0].protocol }} ({{ table3[0].count }} hosts)</p>
+            <p style="margin-top: 15px; color: #8899aa;">
+                Total unique ports: {{ table3|length }} | 
+                Port range: {{ table3[0].port }} - {{ table3[-1].port }} |
+                All IPs sorted ascending
+            </p>
         </div>
         {% endif %}
         
-        <!-- TABLE 4: SERVICE EXPOSURE MATRIX -->
+        <!-- TABLE 4: SERVICE EXPOSURE MATRIX - SORTED BY PORT -->
         {% if 'table4' in selected_tables %}
         <div class="table-container">
-            <h2><span>TABLE 4</span> SERVICE EXPOSURE MATRIX</h2>
-            {% for port_key, data in table4.items() %}
+            <h2>
+                <span>TABLE 4</span> SERVICE EXPOSURE MATRIX
+                </h2>
+            
+            {# Sort ports by port number #}
+            {% set sorted_ports = table4.items()|sort(attribute='1.port') %}
+            
+            {% for port_key, data in sorted_ports %}
             <div style="margin-bottom: 30px;">
                 <h3 style="color: #00bcd4; border-bottom: 2px solid #00bcd4; padding-bottom: 10px;">
                     Port {{ data.port }}/{{ data.protocol }} — Exposed on {{ data.host_count }} host{% if data.host_count != 1 %}s{% endif %}
@@ -534,7 +552,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>IP Address</th>
+                            <th>IP Address (Sorted)</th>
                             <th>Hostname</th>
                             <th>Operating System</th>
                             <th>Service Version</th>
@@ -542,7 +560,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for host in data.hosts[:15] %}
+                        {% for host in data.hosts %}
                         <tr>
                             <td><strong>{{ host.ip }}</strong></td>
                             <td>{{ host.hostname if host.hostname else '—' }}</td>
@@ -553,9 +571,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                {% if data.hosts|length > 15 %}
-                <p style="margin-top: 10px; color: #8899aa;">... and {{ data.hosts|length - 15 }} additional hosts</p>
-                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -581,13 +596,23 @@
                     <span class="summary-label">Weak Ciphers:</span>
                     <span class="summary-value">{{ stats.total_weak_ciphers }}</span>
                 </div>
+                <div class="summary-item">
+                    <span class="summary-label">Unique Ports:</span>
+                    <span class="summary-value">{{ table3|length }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Port Range:</span>
+                    <span class="summary-value">{{ table3[0].port }} - {{ table3[-1].port }}</span>
+                </div>
             </div>
         </div>
         
         <!-- Footer -->
         <div class="footer">
             <p>Generated by NmapFusion v1.0 — Enterprise Network Fusion Tool</p>
-            <p style="margin-top: 10px; font-size: 0.8em;">This report is confidential and intended for authorized assessment purposes only.</p>
+            <p style="margin-top: 10px; font-size: 0.8em;">
+                Tables 3 & 4: Sorted by Port Number (Ascending) | IP Addresses Sorted Ascending
+            </p>
         </div>
     </div>
     
