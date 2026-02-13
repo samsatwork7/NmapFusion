@@ -146,7 +146,7 @@ class ExcelOutput:
         """Create Table 3: Port Frequency Distribution - SORTED BY PORT"""
         ws = self.wb.create_sheet("3_Port_Frequency_Distribution")
         
-        headers = ["Port", "Protocol", "Host Count", "Service", "Sample IPs"]
+        headers = ["Port", "Protocol", "Host Count", "Service", "IPs"]
         ws.append(headers)
         
         # Format headers
@@ -161,8 +161,8 @@ class ExcelOutput:
         if table3_data and isinstance(table3_data, list):
             for row in table3_data:
                 ip_sample = ', '.join(row.get('ip_list', [])[:5]) if row.get('ip_list') else '—'
-                if row.get('ip_list') and len(row['ip_list']) > 5:
-                    ip_sample += f" +{len(row['ip_list'])-5} more"
+                if row.get('ip_list') and len(row['ip_list']) > 20:
+                    ip_sample += f" +{len(row['ip_list'])-20} more"
                 
                 ws.append([
                     row.get('port', 'N/A'),
@@ -220,15 +220,15 @@ class ExcelOutput:
                             function_list.append(function)
                     
                     # Format IP list with count
-                    ip_display = ', '.join(ip_list[:5])
-                    if len(ip_list) > 5:
-                        ip_display += f" +{len(ip_list)-5} more"
+                    ip_display = ', '.join(ip_list[:20])
+                    if len(ip_list) > 20:
+                        ip_display += f" +{len(ip_list)-20} more"
                     
                     # Format hostnames (show unique)
-                    unique_hostnames = list(dict.fromkeys(hostname_list))[:3]
+                    unique_hostnames = list(dict.fromkeys(hostname_list))[:20]
                     hostname_display = ', '.join(unique_hostnames)
-                    if len(unique_hostnames) > 3:
-                        hostname_display += f" +{len(hostname_list)-3} more"
+                    if len(unique_hostnames) > 20:
+                        hostname_display += f" +{len(hostname_list)-20} more"
                     elif not hostname_display:
                         hostname_display = '-'
                     
