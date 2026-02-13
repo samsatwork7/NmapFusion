@@ -41,5 +41,5 @@ source env/bin/activate     # For Linux/Kali/macOS
 pip install -r requirements.txt
 
 # 4. Run your first NmapFusion analysis
-python main.py -i ./nmap_scans/ --all --html --excel
+python nmapfusion.py -i ./nmap_scans/ --all --html --excel
 

@@ -79,38 +79,47 @@ class GNMAPParser:
             if not entry:
                 continue
             
-            # Format: port/protocol/state/service/version
             parts = entry.split('/')
-            if len(parts) >= 4:
-                try:
-                    port_num = int(parts[0]) if parts[0].isdigit() else 0
+            if len(parts) < 3:
+                continue
+
+            try:
+                port_num = int(parts[0]) if parts[0].isdigit() else 0
+
+                # GNMAP canonical format:
+                #   port/state/protocol/owner/service/sunrpcinfo/version
+                # Some tools export a legacy-like variant, so keep a fallback parser.
+                if len(parts) >= 3 and parts[1] in ('open', 'closed', 'filtered'):
+                    state = parts[1] if parts[1] else 'open'
+                    protocol = parts[2] if parts[2] else 'tcp'
+                    service = parts[4] if len(parts) > 4 and parts[4] else 'unknown'
+
+                    # Version/product text is typically in trailing fields.
+                    version_fields = [p for p in parts[5:] if p and p != 'none' and not p.startswith('conf=')]
+                else:
+                    # Fallback (legacy): port/protocol/state/service/version
                     protocol = parts[1] if parts[1] else 'tcp'
                     state = parts[2] if parts[2] else 'open'
-                    service = parts[3] if parts[3] else 'unknown'
-                    
-                    # Extract version if available
-                    version = 'unknown'
-                    if len(parts) > 4:
-                        version_parts = []
-                        for part in parts[4:]:
-                            if part and part != 'none' and not part.startswith('conf='):
-                                version_parts.append(part)
-                        if version_parts:
-                            version = ' '.join(version_parts).strip()
-                    
-                    if state == 'open':
-                        ports.append({
-                            'port': port_num,
-                            'protocol': protocol,
-                            'state': state,
-                            'service': service,
-                            'version': version,
-                            'product': '',
-                            'extrainfo': '',
-                            'nse': []
-                        })
-                except (ValueError, IndexError):
-                    continue
+                    service = parts[3] if len(parts) > 3 and parts[3] else 'unknown'
+                    version_fields = [p for p in parts[4:] if p and p != 'none' and not p.startswith('conf=')]
+
+                version = 'unknown'
+                if version_fields:
+                    version = ' '.join(version_fields).strip()
+
+                if state == 'open':
+                    ports.append({
+                        'port': port_num,
+                        'protocol': protocol,
+                        'state': state,
+                        'service': service,
+                        'version': version,
+                        'product': '',
+                        'extrainfo': '',
+                        'nse': []
+                    })
+            except (ValueError, IndexError):
+                continue
         
         return ports
     
