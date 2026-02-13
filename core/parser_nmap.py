@@ -11,6 +11,7 @@ class NMAPParser:
         results = []
         current_host = None
         nmap_command = ""
+        host_finalized = False  # Track if host was already added
         
         try:
             with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
@@ -19,25 +20,28 @@ class NMAPParser:
             # Extract nmap command
             for line in lines:
                 if line.startswith('Nmap scan report for'):
-                    if current_host:
+                    if current_host and current_host.get('ip'):  # Only add if IP exists
                         results.append(current_host)
                     current_host = self._init_host(nmap_command, str(filepath))
+                    host_finalized = False
                     self._parse_host_line(line, current_host)
                 elif line.startswith('PORT') or line.startswith('PORT   STATE SERVICE'):
-                    current_host['parsing_ports'] = True
+                    if current_host:
+                        current_host['parsing_ports'] = True
                 elif current_host and current_host.get('parsing_ports'):
                     if line.strip() == '':
                         current_host['parsing_ports'] = False
                     else:
                         self._parse_port_line(line, current_host)
                 elif line.startswith('Nmap done:'):
-                    if current_host:
+                    if current_host and current_host.get('ip'):  # Only add if IP exists
                         results.append(current_host)
+                        host_finalized = True
                 elif 'nmap' in line.lower() and 'scan initiated' in line.lower():
                     nmap_command = self._extract_command(line)
             
-            # Add last host
-            if current_host and current_host['ip']:
+            # Add last host if not already added
+            if current_host and current_host.get('ip') and not host_finalized:
                 results.append(current_host)
                 
         except Exception as e:
