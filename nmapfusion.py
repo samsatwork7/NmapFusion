@@ -29,28 +29,28 @@ def parse_arguments():
 ╠══════════════════════════════════════════════════════════╣
 ║  FLAGS REFERENCE:                                        ║
 ║                                                          ║
-║  📊 TABLES:                                             ║
-║    -1     : Table 1 - Host Summary Overview             ║
-║    -2     : Table 2 - Host Detailed Analysis            ║
-║    -3     : Table 3 - Port Frequency Distribution       ║
-║    -4     : Table 4 - Service Exposure Matrix           ║
-║    -a     : ALL tables                                  ║
+║  TABLES:                                                 ║
+║    -1     : Table 1 - Host Summary Overview              ║
+║    -2     : Table 2 - Host Detailed Analysis             ║
+║    -3     : Table 3 - Port Frequency Distribution        ║
+║    -4     : Table 4 - Service Exposure Matrix            ║
+║    -a     : ALL tables                                   ║
 ║                                                          ║
-║  📤 OUTPUT:                                             ║
-║    --html  : Generate HTML Security Dashboard           ║
-║    --excel : Generate Excel Compliance Report           ║
+║  OUTPUT:                                                 ║
+║    --html  : Generate HTML Security Dashboard            ║
+║    --excel : Generate Excel Compliance Report            ║
 ║                                                          ║
-║  ⚙️  OTHER:                                             ║
-║    -i     : Input file/folder (REQUIRED)                ║
-║    -o     : Output directory (default: ./output/)       ║
-║    -v     : Verbose mode (fusion details)               ║
-║    -d     : Debug mode                                  ║
+║  OTHER:                                                  ║
+║    -i     : Input file/folder (REQUIRED)                 ║
+║    -o     : Output directory (default: ./output/)        ║
+║    -v     : Verbose mode (fusion details)                ║
+║    -d     : Debug mode                                   ║
 ║                                                          ║
 ╠══════════════════════════════════════════════════════════╣
-║  📌 EXAMPLES:                                           ║
-║    python nmapfusion.py -i ./scans/ -a                  ║
-║    python nmapfusion.py -i ./scans/ -2 -4 --html        ║
-║    python nmapfusion.py -i ./scans/ -1 -v -o ./reports/ ║
+║  EXAMPLES:                                               ║
+║    python nmapfusion.py -i ./scans/ -a                   ║
+║    python nmapfusion.py -i ./scans/ -2 -4 --html         ║
+║    python nmapfusion.py -i ./scans/ -1 -v -o ./reports/  ║
 ╚══════════════════════════════════════════════════════════╝
         """
     )
@@ -120,30 +120,30 @@ def main():
     
     print("""
 ╔══════════════════════════════════════════════════════════╗
-║                    🚀 NmapFusion v1.0                    ║
+║                    NmapFusion v1.0                       ║
 ║              Enterprise Network Fusion Tool              ║
 ╚══════════════════════════════════════════════════════════╝
     """)
     
     # Step 1: Parse and fuse all files
-    print(f"[1/5] 📂 Processing input: {args.input}")
+    print(f"[1/5] Processing input: {args.input}")
     aggregator = Aggregator(config)
     hosts = aggregator.process_input(args.input)
     fusion_summary = aggregator.get_fusion_summary()
     
     if not hosts:
-        print("❌ No hosts found in the input files.")
+        print("No hosts found in the input files.")
         sys.exit(1)
     
-    print(f"[2/5] 🔀 Fusion complete: {fusion_summary['unique_ips']} unique IPs from {fusion_summary['files_processed']} files")
+    print(f"[2/5] Fusion complete: {fusion_summary['unique_ips']} unique IPs from {fusion_summary['files_processed']} files")
     
     # Step 2: Enrich with subnet info
-    print("[3/5] 🔍 Enriching data with subnet information...")
+    print("[3/5] Enriching data with subnet information...")
     enricher = Enricher(config)
     hosts = enricher.enrich_hosts(hosts)
     
     # Step 3: Analyze and build tables
-    print("[4/5] 📊 Analyzing and building tables...")
+    print("[4/5] Analyzing and building tables...")
     analyzer = Analyzer()
     analysis_results = analyzer.analyze(hosts)
     
@@ -169,7 +169,7 @@ def main():
             selected_tables.append('table4')
     
     # Step 4: Generate outputs
-    print("[5/5] 📤 Generating outputs...")
+    print("[5/5] Generating outputs...")
     
     # Terminal output
     terminal = TerminalOutput(verbose=args.verbose)
@@ -180,29 +180,29 @@ def main():
         print("\n[+] Generating HTML Security Dashboard...")
         html_output = HTMLOutput(output_dir)
         html_file = html_output.generate(analysis_results, fusion_summary, nmap_commands, selected_tables)
-        print(f"    📁 HTML report: {html_file}")
+        print(f"HTML report: {html_file}")
     
     # Excel output
     if args.excel:
         print("[+] Generating Excel Compliance Report...")
         excel_output = ExcelOutput(output_dir)
         excel_file = excel_output.generate(analysis_results, fusion_summary, nmap_commands, selected_tables)
-        print(f"    📁 Excel report: {excel_file}")
+        print(f"Excel report: {excel_file}")
     
-    print("\n✅ NmapFusion analysis complete!")
+    print("\nNmapFusion analysis complete!")
 
 import signal
 
 def graceful_exit(message, code=0):
     """Clean exit handler"""
     print(f"\n{message}")
-    print("🔒 NmapFusion exited safely.")
+    print("NmapFusion exited safely.")
     sys.exit(code)
 
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C (SIGINT)"""
-    graceful_exit("⚠️  Execution interrupted by user (SIGINT).", 130)
+    graceful_exit("Execution interrupted by user (SIGINT).", 130)
 
 
 if __name__ == '__main__':
@@ -213,10 +213,10 @@ if __name__ == '__main__':
         main()
 
     except KeyboardInterrupt:
-        graceful_exit("⚠️  Execution interrupted by user.", 130)
+        graceful_exit("Execution interrupted by user.", 130)
 
     except Exception as e:
-        print(f"\n❌ Unexpected Error: {e}")
+        print(f"\nUnexpected Error: {e}")
 
         if '--debug' in sys.argv or '-d' in sys.argv:
             import traceback
