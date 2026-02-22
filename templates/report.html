@@ -514,11 +514,11 @@
                         <td><strong>{{ row.count }}</strong></td>
                         <td>{{ row.service }}</td>
                         <td>
-                            {% for ip in row.ip_list[:5] %}
+                            {% for ip in row.ip_list[:200] %}
                                 {{ ip }}{% if not loop.last %}, {% endif %}
                             {% endfor %}
-                            {% if row.ip_list|length > 5 %}
-                                +{{ row.ip_list|length - 5 }} more
+                            {% if row.ip_list|length > 200 %}
+                                +{{ row.ip_list|length - 200 }} more
                             {% endif %}
                         </td>
                     </tr>
