@@ -160,9 +160,9 @@ class ExcelOutput:
         # Add data if available
         if table3_data and isinstance(table3_data, list):
             for row in table3_data:
-                ip_sample = ', '.join(row.get('ip_list', [])[:20]) if row.get('ip_list') else '—'
-                if row.get('ip_list') and len(row['ip_list']) > 20:
-                    ip_sample += f" +{len(row['ip_list'])-20} more"
+                ip_sample = ', '.join(row.get('ip_list', [])[:200]) if row.get('ip_list') else '—'
+                if row.get('ip_list') and len(row['ip_list']) > 200:
+                    ip_sample += f" +{len(row['ip_list'])-200} more"
                 
                 ws.append([
                     row.get('port', 'N/A'),
